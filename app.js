@@ -21,25 +21,22 @@ app.get('/login', isLoggedIn, (req, res) => {
 
 app.get('/profile', isLoggedIn, (req, res) => {
     console.log(req.user);
-    res.render('login');
+    res.render('/profile');
 });
 
 
 app.get('/logout', (req, res) => {
     res.cookie("token", "");
-    res.redirect('/login'); 
+    res.redirect('/login');
 });
 
 
 app.post('/register', async (req, res) => {
     let { username, name, email, age, password } = req.body;
-
     let user = await userModels.findOne({ email });
-
     if (user) {
         return res.status(500).send('User already exists');
     }
-
     bcrypt.genSalt(10, (err, salt) => {
         console.log(salt);
         bcrypt.hash(password, salt, async (err, hash) => {
@@ -51,7 +48,6 @@ app.post('/register', async (req, res) => {
                 age,
                 password: hash
             });
-
             let token = jwt.sign({
                 email: user.email,
                 userid: user._id
@@ -63,52 +59,38 @@ app.post('/register', async (req, res) => {
 });
 
 
-
-
-
-app.post('/login', async (req, res) => 
-    {
+app.post('/login', async (req, res) => {
     let { email, password } = req.body;
     let user = await userModels.findOne({ email });
-
     if (!user) {
         return res.status(500).send('something wrong');
     }
-
     bcrypt.compare(password, user.password, (err, result) => {
-
         if (result) {
-          
-           let token = jwt.sign({
+            let token = jwt.sign({
                 email: user.email,
                 userid: user._id
             }, "secretkey",)
             res.cookie("token", token);
-            res.status(200).send("Login successful");
+            res.status(200).redirect('/profile');
         } else {
             res.redirect('/login');
-
         }
-
     })
- }) ;
+});
 
 
-
- function isLoggedIn(req, res, next) {
-    if(req.cookies.token==="")
-    {
-        res.send("you are not logged in");
+function isLoggedIn(req, res, next) {
+    if (req.cookies.token === "") {
+        res.redirect('/login');
     } else {
         let data = jwt.verify(req.cookies.token, "secretkey");
         req.user = data;
+        next();
     }
-next();
-    console.log(req.cookies);
-    next();
 }
 
 
 app.listen(3000, () => {
-        console.log('Server is running at http://localhost:3000');
-    });
+    console.log('Server is running at http://localhost:3000');
+});
