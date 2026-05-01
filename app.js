@@ -15,13 +15,14 @@ app.get('/', (req, res) => {
     res.render('index');
 });
 
-app.get('/login',  (req, res) => {
+app.get('/login', (req, res) => {
     res.render('login');
 });
 
 app.get('/profile', isLoggedIn, async (req, res) => {
-    let user = await userModels.findOne({ email: req.user.email });
+    let user = await userModels.findOne({ email: req.user.email }).populate('posts');
     console.log(req.user);
+   
     res.render('profile', { user });
 });
 
@@ -32,7 +33,7 @@ app.post('/post', isLoggedIn, async (req, res) => {
         user: user._id,
         content: content
     });
-    user.post.push(post._id);
+    user.posts.push(post._id);
     await user.save();
     res.redirect('/profile');
 });
