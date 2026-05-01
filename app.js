@@ -15,13 +15,26 @@ app.get('/', (req, res) => {
     res.render('index');
 });
 
-app.get('/login', isLoggedIn, (req, res) => {
+app.get('/login',  (req, res) => {
     res.render('login');
 });
 
-app.get('/profile', isLoggedIn, (req, res) => {
+app.get('/profile', isLoggedIn, async (req, res) => {
+    let user = await userModels.findOne({ email: req.user.email });
     console.log(req.user);
-    res.render('/profile');
+    res.render('profile', { user });
+});
+
+app.post('/post', isLoggedIn, async (req, res) => {
+    let user = await userModels.findOne({ email: req.user.email });
+    let { content } = req.body;
+    let post = await postModels.create({
+        user: user._id,
+        content: content
+    });
+    user.post.push(post._id);
+    await user.save();
+    res.redirect('/profile');
 });
 
 
