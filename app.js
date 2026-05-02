@@ -21,9 +21,30 @@ app.get('/login', (req, res) => {
 
 app.get('/profile', isLoggedIn, async (req, res) => {
     let user = await userModels.findOne({ email: req.user.email }).populate('posts');
-    console.log(req.user);
-   
+    console.log("this is user", user);
+    console.log("this is reques.user", req.user);
     res.render('profile', { user });
+});
+
+app.get("/like/:id", isLoggedIn, async (req, res) => {
+    let post = await postModels.findOne({ _id: req.params.id }).populate("user");
+    if (post.likes.indexOf(req.user.userId) === -1) {
+        post.likes.push(req.user.userId);
+    } else {
+        post.likes.splice(post.likes.indexOf(req.user.userId), 1);
+    }
+    await post.save();
+    res.redirect("/profile");
+});
+
+app.get("/edit/:id", isLoggedIn, async (req, res) => {
+    let post = await postModels.findOne({ _id: req.params.id }).populate("user");
+    res.render("edit", { post });
+});
+
+app.post("/update/:id", isLoggedIn, async (req, res) => {
+    let post = await postModels.findOneAndUpdate({ _id: req.params.id }, { content: req.body.content });
+    res.redirect("/profile"); 
 });
 
 app.post('/post', isLoggedIn, async (req, res) => {
@@ -52,9 +73,9 @@ app.post('/register', async (req, res) => {
         return res.status(500).send('User already exists');
     }
     bcrypt.genSalt(10, (err, salt) => {
-        console.log(salt);
+        // console.log(salt);
         bcrypt.hash(password, salt, async (err, hash) => {
-            console.log(hash);
+            // console.log(hash);
             let user = await userModels.create({
                 username,
                 name,
